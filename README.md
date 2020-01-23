@@ -1,5 +1,5 @@
 # sleepScoringIEEG
-sleep scoring based on intracranial recordings
+sleep scoring based on intracranial recordings (in collaboration with Yuval Nir and Hanna Hayat)
 
 GENERAL DESCRIPTION - 
 In XX sessions (X nights / X naps), no PSG was recorded (or recorded signals were noisy) making conventional scalp EEG-based sleep staging impossible. Instead, we performed sleep scoring by using depth EEG and video recordings (REFs). We calculated spectrograms with a 30 sec window (no overlap) from 0 to 40Hz and averaged the power in the delta band (0-4Hz). Epochs with delta power higher than the percentile 55 were scored as NREM sleep and those with delta power lower than the percentile 20 were scored as wakefulness/REM sleep and were further separated as below. 
