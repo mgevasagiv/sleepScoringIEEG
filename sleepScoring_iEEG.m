@@ -104,7 +104,7 @@ classdef sleepScoring_iEEG < handle
             plot(T(logical(Svec)),20,'.','markersize',5,'color','r')
             legend('P delta','P spindle','TH1','TH2')
             title(sprintf('white - sleep scoring based on delta TH, red - based on clustering delta+spindle, diff = %2.2f%%',...
-                sum(pointsPassedSleepThresh - Svec)/length(Svec)))
+                100*sum(pointsPassedSleepThresh - Svec)/length(Svec)))
             
             for ii_a = 1:2
                 if ii_a == 1
