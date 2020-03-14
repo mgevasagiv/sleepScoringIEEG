@@ -78,7 +78,6 @@ classdef sleepScoring_iEEG < handle
             plot(T,P_sp*fitToWin2-min(P_sp)*fitToWin2,'-','linewidth',1,'color',[0.8,0.8,0.8])
             line(get(gca,'xlim'),thSleepInclusion*fitToWin1*ones(1,2),'color','k','linewidth',3)
             line(get(gca,'xlim'),thREMInclusion*fitToWin1*ones(1,2),'color','k','linewidth',3)
-            legend('P delta','P spindle','TH1','TH2')
             
             xlabel('ms')
             ylabel('F(Hz)')
@@ -87,8 +86,25 @@ classdef sleepScoring_iEEG < handle
             text(XLIM(2)+diff(XLIM)/35,thSleepInclusion*fitToWin1,'NREM TH')
             text(XLIM(2)+diff(XLIM)/35,thREMInclusion*fitToWin1,'REM TH')
             
+            %% Compare threshold-based sleep-scoring to a data-driven cluster approach
+            D1 = [P_delta(:), P_sp(:)];            
+            gm = fitgmdist(D1,2);
+            P = posterior(gm,D1);
+            C1 = find(P(:,1)>P(:,2));
+            C2 = find(P(:,2)>P(:,1));            
+            Svec = zeros(1,length(D1));
+            if gm.mu(1) > gm.mu(2)
+                Svec(C1) = 1;
+            else
+                Svec(C2) = 1;
+            end
             
-            
+            hold on
+            plot(T(pointsPassedSleepThresh),25,'.','markersize',5,'color','w')
+            plot(T(logical(Svec)),20,'.','markersize',5,'color','r')
+            legend('P delta','P spindle','TH1','TH2')
+            title(sprintf('white - sleep scoring based on delta TH, red - based on clustering delta+spindle, diff = %2.2f%%',...
+                sum(pointsPassedSleepThresh - Svec)/length(Svec)))
             
             for ii_a = 1:2
                 if ii_a == 1
@@ -285,6 +301,10 @@ classdef sleepScoring_iEEG < handle
                 endInd = find(sleep_score_vec == obj.NREM_CODE,1,'last');
                 sleepRange(startInd:endInd) = 1;
                 
+                SLEEP_properties_IDX.NREM = 1;
+                SLEEP_properties_IDX.REM = 2;
+                SLEEP_properties_IDX.WAKE = 3;
+                
                 for ii_a = 1:3
                     if ii_a == 1
                         a_data =  data(sleep_score_vec == obj.NREM_CODE);
@@ -299,7 +319,8 @@ classdef sleepScoring_iEEG < handle
                     WIN = min(500,length(a_data));
                     NOVERLAP = min(400,WIN/2);
                     [pxx1, f1] = pwelch(a_data,WIN,NOVERLAP,freq,obj.samplingRate);
-                    
+                    SLEEP_properties{ii_a}.pxx1 = pxx1;
+                    SLEEP_properties{ii_a}.pxx1 = f1;
                     
                     hold on
                     if ii_a == 1
@@ -320,12 +341,22 @@ classdef sleepScoring_iEEG < handle
                 title('power spectrum (iEEG)')
                 
                 
-                axes('position',[0.5,0.2,0.3,0.3])
-                text(0,0.6,sprintf('sleep length = %2.2fh',(endInd-startInd)/(60000*60)))
-                text(0,0.5,sprintf('NREM = %2.2f%%',100*sum(sleep_score_vec == obj.NREM_CODE)/(endInd-startInd)))
-                text(0,0.4,sprintf('REM = ~%2.2f%%',100*sum(sleep_score_vec == obj.REM_CODE)/(endInd-startInd)))
+                axes('position',[0.4,0.2,0.3,0.3])
+                IDX.sleep_length_min = 1;
+                IDX.NREM_length_min = 2;
+                IDX.REM_length_min = 3;
+                SLEEP_properties_stats.IDX = IDX;
+                SLEEP_properties_stats.STATS(IDX.sleep_length_min) = (endInd-startInd)/(60000*60);
+                SLEEP_properties_stats.STATS(IDX.NREM_length_min) = 100*sum(sleep_score_vec == obj.NREM_CODE)/(endInd-startInd);
+                SLEEP_properties_stats.STATS(IDX.REM_length_min) = 100*sum(sleep_score_vec == obj.REM_CODE)/(endInd-startInd);
+              
+                text(0,0.6,sprintf('sleep length = %2.2fh',SLEEP_properties_stats.STATS(IDX.sleep_length_min)))
+                text(0,0.5,sprintf('NREM = %2.2f%%',SLEEP_properties_stats.STATS(IDX.NREM_length_min)))
+                text(0,0.4,sprintf('REM = ~%2.2f%%',SLEEP_properties_stats.STATS(IDX.REM_length_min)))
                 axis off
                 
+                filename = sprintf('sleepScore_%s_E%d_%s_ch%d_stats',header.id,header.experimentNum,LocalHeader.origName,LocalHeader.channel_id);
+                save(fullfile(figure_folder,filename),'SLEEP_properties_IDX','SLEEP_properties');
                 PrintActiveFigs(figure_folder)
                 
             end
