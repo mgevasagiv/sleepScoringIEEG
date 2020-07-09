@@ -41,7 +41,13 @@ if ~manualValidation
     for ii = 1:length(ElectrodeForSleepScoring)
         mm = matfile(sprintf('CSC%d.mat',ElectrodeForSleepScoring(ii)));
         data = mm.data;
-        LocalHeader = mm.LocalHeader;
+        try
+            LocalHeader = mm.LocalHeader;
+        catch
+            LocalHeader.origName = sprintf('CSC%d.mat',ElectrodeForSleepScoring(ii));
+            LocalHeader.channel_id = ElectrodeForSleepScoring(ii);
+            sleepScore_obj.useClustering_for_scoring = 1;
+        end
         
         [sleep_score_vec] = evluateDelta(sleepScore_obj,data, LocalHeader, header);
     end
@@ -53,9 +59,14 @@ else
         end
         mm = matfile(sprintf('CSC%d.mat',ElectrodeForSleepScoring(ii)));
         data = mm.data;
-        LocalHeader = mm.LocalHeader;
+        try
+            LocalHeader = mm.LocalHeader;
+        catch
+            LocalHeader.origName = sprintf('CSC%d.mat',ElectrodeForSleepScoring(ii));
+            LocalHeader.channel_id = ElectrodeForSleepScoring(ii);
+        end
         
-        manualValidationSleepScoring(data,mm.LocalHeader,header)
+        manualValidationSleepScoring(data,LocalHeader,header)
     end
 end
 

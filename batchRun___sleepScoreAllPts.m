@@ -27,7 +27,7 @@ end
 % update the XLS 'sleepScoring' pt/session table
 
 % Step 3 - run automated sleep scoring on the selected channels
-ID_list = [21:23,25:34]; % Entry ID in PtList XLS
+ID_list = [15,18:19,21:23,25:34]; % Entry ID in PtList XLS
 for ii_s = 1:length(ID_list) 
     
     %% inter-ictal activity, SWS, spindle - per channel

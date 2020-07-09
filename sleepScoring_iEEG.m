@@ -19,6 +19,7 @@ classdef sleepScoring_iEEG < handle
         
         PLOT_FIG = 1;
         scaling_factor_delta_log = 2*10^-4 ; % Additive Factor to be used when computing the Spectrogram on a log scale
+        useClustering_for_scoring = 0; % this should be used for naps w/o REM sleep
         
         scoringEpochDuration = 30; % sec
         NREM_CODE = 1;
@@ -57,8 +58,7 @@ classdef sleepScoring_iEEG < handle
             relevantSpIndices = find(F > obj.spRangeMin & F < obj.spRangeMax);
             P_sp = movsum(sum(P(relevantSpIndices,:)),5);
             
-            
-            figure_name_out = sprintf('sleepScore_process_%s_E%d_%s',header.id,header.experimentNum,LocalHeader.origName);
+             figure_name_out = sprintf('sleepScore_process_%s_E%d_%s',header.id,header.experimentNum, LocalHeader.origName);
             figure('Name', figure_name_out,'NumberTitle','off');
             set(gcf,'PaperUnits','centimeters','PaperPosition',[0.2 0.2 25 35]); % this size is the maximal to fit on an A4 paper when printing to PDF
             set(gcf,'PaperOrientation','portrait');
@@ -106,11 +106,22 @@ classdef sleepScoring_iEEG < handle
             title(sprintf('white - sleep scoring based on delta TH, red - based on clustering delta+spindle, diff = %2.2f%%',...
                 100*sum(pointsPassedSleepThresh - Svec)/length(Svec)))
             
+                
             for ii_a = 1:2
                 if ii_a == 1
-                    data_merge = pointsPassedSleepThresh;
+                    if ~obj.useClustering_for_scoring
+                        data_merge = pointsPassedSleepThresh;
+                    else
+                        data_merge = Svec;
+                    end
+                    
                 elseif ii_a == 2
-                    data_merge = pointsPassedREMThresh;
+                    if ~obj.useClustering_for_scoring
+                        data_merge = pointsPassedREMThresh;
+                    else
+                        data_merge = ~Svec;
+                    end
+
                 end
                 diffStartEnd = diff(data_merge);
                 %events are defined by sequences which have a peak above
@@ -252,14 +263,27 @@ classdef sleepScoring_iEEG < handle
                 T2 = [0 T2 T2(end)+1];
                 Pplot = imgaussfilt(P1',3);
                 
-                start_time = datenum(LocalHeader.NLXfilesStartTime{1});
-                if length(LocalHeader.NLXfilesStartTime) > 1
-                    if datenum(LocalHeader.NLXfilesStartTime{2}) < datenum(LocalHeader.NLXfilesStartTime{1})
-                        % Many times NLX numbering is reversed
-                        start_time = datenum(LocalHeader.NLXfilesStartTime{2});
+                try
+                    start_time = datenum(LocalHeader.NLXfilesStartTime{1});
+                    if length(LocalHeader.NLXfilesStartTime) > 1
+                        if datenum(LocalHeader.NLXfilesStartTime{2}) < datenum(LocalHeader.NLXfilesStartTime{1})
+                            % Many times NLX numbering is reversed
+                            start_time = datenum(LocalHeader.NLXfilesStartTime{2});
+                        end
                     end
+                    end_time = datenum(LocalHeader.NLXfilesEndTime{end});
+                catch
+                    start_time = datenum('2017/10/21 00:00:00');
+                    hh = round(diff([T(1), T(end)])/(60*60));
+                    if hh >= 1
+                        mm = round(diff([T(1), T(end)])/60 - hh*60);
+                    else
+                        hh = 0;
+                        mm = round(diff([T(1), T(end)])/60)
+                    end
+                    end_time = datenum(sprintf('2017/10/21 %02d:%02d:00',hh,mm));
                 end
-                end_time = datenum(LocalHeader.NLXfilesEndTime{end});
+                
                 xData = linspace(start_time,end_time,length(P1));
                 
                 
