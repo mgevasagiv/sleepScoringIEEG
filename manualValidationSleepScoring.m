@@ -63,8 +63,19 @@ while strcmpi(answer,'Y')
     
 end
 
+sleep_score_vec = zeros(1,length(data));
+sleep_score_vec(1:T(1)*obj.samplingRate) = pointsPassedSleepThresh(1);
+for iEpoch = 2:length(T)
+    if(pointsPassedSleepThresh(iEpoch))
+        sleep_score_vec(T(iEpoch-1)*obj.samplingRate+1:T(iEpoch)*obj.samplingRate) = obj.NREM_CODE;
+    elseif pointsPassedREMThresh(iEpoch)
+        sleep_score_vec(T(iEpoch-1)*obj.samplingRate+1:T(iEpoch)*obj.samplingRate) = obj.REM_CODE;
+    end
+end
+            
+            
 save(sprintf('sleepScore_manualValidated_%s_%d_%s',header.id,header.experimentNum,LocalHeader.origName),...
-    'header','sleep_score_vec','obj','P_delta')
+    'header','sleep_score_vec','obj','P_delta','pointsPassedSleepThresh','pointsPassedREMThresh')
 
 % Plot final figures
 [~, hostname]= system('hostname');

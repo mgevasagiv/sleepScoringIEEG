@@ -52,3 +52,17 @@ for ii_s = 1:length(ID_list)
     sleepScoring_iEEG_wrapper(ptEntry, headerFileFolder,manualValidation); % TBD - evaluating sleep
      
 end
+
+% step 5 
+% publication worthy hypnogram 
+% this folder contains all sleep scored vectors
+fileFolder = 'E:\Data_p\SleepScore_v1';
+
+
+% Collecting data from all patients
+genSleepScoringPopulationFig()
+
+ptEntry = PtList(19);
+disp(sprintf('sleep scoring pt %d',ptEntry.subj))
+create_sleepHypnogram_SUP_FIG(ptEntry, headerFileFolder)
+
