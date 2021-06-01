@@ -370,7 +370,7 @@ classdef sleepScoring_iEEG < handle
                 IDX.NREM_length_min = 2;
                 IDX.REM_length_min = 3;
                 SLEEP_properties_stats.IDX = IDX;
-                SLEEP_properties_stats.STATS(IDX.sleep_length_min) = (endInd-startInd)/(60000*60);
+                SLEEP_properties_stats.STATS(IDX.sleep_length_min) = (endInd-startInd)/(60*obj.samplingRate *60);
                 SLEEP_properties_stats.STATS(IDX.NREM_length_min) = 100*sum(sleep_score_vec == obj.NREM_CODE)/(endInd-startInd);
                 SLEEP_properties_stats.STATS(IDX.REM_length_min) = 100*sum(sleep_score_vec == obj.REM_CODE)/(endInd-startInd);
               
