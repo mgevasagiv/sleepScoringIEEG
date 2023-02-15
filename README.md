@@ -2,9 +2,7 @@
 sleep scoring based on intracranial recordings (in collaboration with Yuval Nir and Hanna Hayat)
 
 GENERAL DESCRIPTION - 
-In XX sessions (X nights / X naps), no PSG was recorded (or recorded signals were noisy) making conventional scalp EEG-based sleep staging impossible. Instead, we performed sleep scoring by using depth EEG and video recordings (REFs). We calculated spectrograms with a 30 sec window (no overlap) from 0 to 40Hz and averaged the power in the delta band (0-4Hz). Epochs with delta power higher than the percentile 55 were scored as NREM sleep and those with delta power lower than the percentile 20 were scored as wakefulness/REM sleep and were further separated as below. 
-
-Separating REM sleep from wakeful epochs - epochs that showed on video that the patient was awake (eyes open, moving, sitting…) were scored as wakefulness. Long periods (at least 10min? continuously) occurring during the second part of the night that showed on video that the patient was apparently asleep (closed eyes, no movements) were scored as REM sleep.
+In sleep sessions on which no PSG was recorded (or recorded signals were noisy), conventional scalp EEG-based sleep staging was made impossible. Instead, this toolbox allows sleep scoring by using depth EEG. We calculated spectrograms with a 30 sec window (no overlap) from 0 to 40Hz and averaged the power in the delta band (0-4Hz). 
 
 FINER DETAILS - 
 Start with generating a hypnogram for all available channels - using plotHypnogram_perChannel()
