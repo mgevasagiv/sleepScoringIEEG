@@ -12,7 +12,7 @@ samplingRate = 1e3; % Hz
 % Choose best MACRO channel to score  (pre-defined)
 dropboxLink
 pt_score_table = importXLSClosedLoopPatientList(fullfile(dropbox_link,'Nir_Lab\Work\closedLoopPatients\closedLoopStats1.xlsx')...
-    ,'sleepScoring',35);
+    ,'sleepScoring',40);
 
 % Go over all pts, and generate a population figure
 for iPatient = 1:length(fileList)
@@ -77,6 +77,11 @@ end
 
 save(fullfile(resultsFolder,'sleep_population_power'),'sleep_cell_stats','sleep_cell')
 
+%% Printing Extended Data Fig. 1c
+
+load(fullfile(resultsFolder,'sleep_population_power'),'sleep_cell_stats','sleep_cell')
+f1 = sleep_cell{1}.f(1,:);
+
 figure_name_out = sprintf('SUP_FIG3_sleepScoring_powerSpectrum_all');
 f0 = figure('Name', figure_name_out,'NumberTitle','off');
 set(gcf,'PaperUnits','centimeters','PaperPosition',[0.2 0.2 12 8]); % this size is the maximal to fit on an A4 paper when printing to PDF
@@ -98,15 +103,32 @@ for ii_a = 1:3
     elseif ii_a == 3
         col = [0.6 0.6 0.6];
     end
-    axes('position',aa(ii_a,:))
+    axes('position',aa(ii_a,:));
     plot(f1,10*log10(mean(sleep_cell{ii_a}.pxx1)),'color',col,'linewidth',5)
     hold on 
     plot(f1,10*log10(sleep_cell{ii_a}.pxx1),'--k')
     axis([0 25,0,40])
+    set(gca,'xtick',[0 25])
+
+    if SAVE_TABLE
+        outputFolderSrc = 'C:\Users\mgeva\Documents\GitHub\closedLoop-pub\figureGen';
+        varnames = {'average_power_dB','frequency'};
+        b = f1;
+        a = 10*log10(mean(sleep_cell{ii_a}.pxx1));
+        jointTable = table(a(:),b(:),'VariableNames',varnames);
+        for iiP = 1:size( sleep_cell{ii_a}.pxx1,1)
+            varName = {sprintf('pt%d',iiP)};
+            a = 10*log10(sleep_cell{ii_a}.pxx1(iiP,:));
+            data_table1 = table(a(:),'VariableNames',varName);
+            jointTable = [jointTable, data_table1];
+        end
+        filename = fullfile(outputFolderSrc,sprintf('ExtendedDataFig1c%d_table',ii_a+1));
+        save(filename,'jointTable');
+    end
 
 end
 
-axes('position',aa(4,:))
+axes('position',aa(4,:));
 hold on
 for ii_a = 1:3
     if ii_a == 1
@@ -119,21 +141,22 @@ for ii_a = 1:3
     end
     plot(f1,10*log10(mean(sleep_cell{ii_a}.pxx1)),'color',col,'linewidth',2)
     axis([0 25,0,40])
+    set(gca,'xtick',[0 25])
+
+    data(ii_a,:) = 10*log10(mean(sleep_cell{ii_a}.pxx1));  
 end
 
-% xlabel('f(Hz)')
-% ylabel('dB')
-% legend('NREM','REM*','Wake*')
-% title('power spectrum (iEEG)')
-% 
-% axes('position',[0.6,0.2,0.2,0.2])
-% text(0,0.6,sprintf('sleep length = %2.2fh',(endInd-startInd)/(60000*60)))
-% text(0,0.5,sprintf('NREM = %2.2f%%',100*sum(sleep_score_vec == ss_obj.NREM_CODE)/(endInd-startInd)))
-% text(0,0.4,sprintf('REM = ~%2.2f%%',100*sum(sleep_score_vec == ss_obj.REM_CODE)/(endInd-startInd)))
-% axis off
+if SAVE_TABLE
+    outputFolderSrc = 'C:\Users\mgeva\Documents\GitHub\closedLoop-pub\figureGen';
+    varnames = {'nrem_power_dB','desynch_power_dB','wake_power_dB','frequency'};
+    b = f1;
+    data_table = table(data(1,:)',data(2,:)',data(3,:)',b(:),'VariableNames',varnames);
+    filename = fullfile(outputFolderSrc,sprintf('ExtendedDataFig1c1_table'));
+    save(filename,'data_table');
+end
 
-outputFigureFolder = 'E:\Dropbox\ILLUSTRATOR\SUP_fig3\links';
+
+outputFigureFolder = 'E:\Dropbox\Nir_Lab\closedLoopRevision\Figures\links_sup_fig1';
 res =  600;
-
 a = gcf;
 eval(['print ', [outputFigureFolder,'\',a.Name], ' -f', num2str(a.Number),sprintf(' -dtiff  -r%d',res), '-cmyk' ]); % adding r600 slows down this process significantly!

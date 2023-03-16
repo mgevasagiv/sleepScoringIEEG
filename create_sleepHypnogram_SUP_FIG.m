@@ -27,7 +27,7 @@ end
 % Choose best MACRO channel to score  (pre-defined)
 dropboxLink
 pt_score_table = importXLSClosedLoopPatientList(fullfile(dropbox_link,'Nir_Lab\Work\closedLoopPatients\closedLoopStats1.xlsx')...
-    ,'sleepScoring',35);
+    ,'sleepScoring',22);
 ptInd = [];
 for ii = 1:length(pt_score_table)
     if pt_score_table(ii).subj == pt
@@ -85,7 +85,12 @@ xticks = 0:(60*60):T(end);
 set(gca,'xtick','')
 XLIM = get(gca,'xlim');
 axis([get(gca,'xlim'),[0.5,30]])
-set(gca,'xtick',xticks(2:2:end),'xticklabels',{'11:00pm','03:00am','05:00am','07:00am'})
+
+if pt == 541
+    xlim_end = xticks(end-1)+5*60;
+    axis([XLIM(1),xlim_end,0.5,30])
+    set(gca,'xtick',xticks(2:2:end),'xticklabels',{'11:00pm','03:00am','05:00am','07:00am'})
+end
 set(gca,'ytick',[0.5,10,20])
 YLIM = get(gca,'ylim');
 ylabel('f (Hz)')

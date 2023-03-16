@@ -25,14 +25,45 @@ classdef sleepScoring_iEEG < handle
         NREM_CODE = 1;
         REM_CODE = -1;
         
+        EXTREME_NOISE = 0; % support in cases of extreme background noise
+
     end
     
     methods
         
         function [sleep_score_vec] = evluateDelta(obj,data, LocalHeader, header)
-            
             data(isnan(data)) = 0;
 
+            %% remove extremely noisy data segments (like around stimulation
+            % that shift the power to higher frequencies)
+            % This was added to make scoring possible for p544
+            if obj.EXTREME_NOISE
+            timeWin = 10*obj.samplingRate;
+            dataL = size(data,2);
+            nTimeWins = floor(size(data,2)/timeWin);
+            dataLmin = dataL/obj.samplingRate/60;
+            
+            for iTimeWin=1:nTimeWins
+                normsTimeWin(1,iTimeWin) = sqrt(nansum(data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin).^2));
+            end
+            
+            stdsNorms = std(normsTimeWin(:));
+            skewNorms = skewness(normsTimeWin(:));
+            kurtNorms = kurtosis(normsTimeWin(:));
+            
+            medStd = nanmedian(stdsNorms);
+            medSkew = nanmedian(skewNorms);
+            medKurt = nanmedian(kurtNorms);
+            
+            for iTimeWin=1:nTimeWins
+                normsTimeWin(1,iTimeWin) = sqrt(nansum(data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin).^2));
+                if normsTimeWin(1,iTimeWin)  > medStd
+                    data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin) = 0;
+                end
+            end
+            end
+            %%
+            
             window = obj.scoringEpochDuration*obj.samplingRate;
             [S,F,T,P]  = spectrogram(data,window,0,[0.5:0.2:obj.flimits(2)],obj.samplingRate,'yaxis');
             diffSamples = obj.minDistBetweenEvents/diff(T(1:2)); %samples
@@ -58,7 +89,7 @@ classdef sleepScoring_iEEG < handle
             relevantSpIndices = find(F > obj.spRangeMin & F < obj.spRangeMax);
             P_sp = movsum(sum(P(relevantSpIndices,:)),5);
             
-             figure_name_out = sprintf('sleepScore_process_%s_E%d_%s',header.id,header.experimentNum, LocalHeader.origName);
+            figure_name_out = sprintf('sleepScore_process_%s_E%d_%s',header.id,header.experimentNum, LocalHeader.origName);
             figure('Name', figure_name_out,'NumberTitle','off');
             set(gcf,'PaperUnits','centimeters','PaperPosition',[0.2 0.2 25 35]); % this size is the maximal to fit on an A4 paper when printing to PDF
             set(gcf,'PaperOrientation','portrait');

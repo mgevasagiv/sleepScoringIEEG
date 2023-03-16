@@ -62,10 +62,12 @@ set(gca,'ytick',[0.5,10,20,30])
 YLIM = get(gca,'ylim');
 
 hold all;
-if ~isempty(strfind(pwd,'MACRO'))
-    plot(EXP_DATA.stimTiming.validatedTTL_NLX/(1000)',YLIM(2)*0.9,'r.')
-else
-    plot(EXP_DATA.stimTiming.validatedTTL_BR_msec/(1000)',YLIM(2)*0.9,'r.')
+if isfield(EXP_DATA,'stimTiming')
+    if ~isempty(strfind(pwd,'MACRO'))
+        plot(EXP_DATA.stimTiming.validatedTTL_NLX/(1000)',YLIM(2)*0.9,'r.')
+    else
+        plot(EXP_DATA.stimTiming.validatedTTL_BR_msec/(1000)',YLIM(2)*0.9,'r.')
+    end
 end
 xlabel('t (hr)')
 ylabel('f (Hz)')
@@ -123,11 +125,16 @@ if PPT_FIG
     title('')
     box off
     colorbar
+    if isfield(EXP_DATA,'stimTiming')
     plot(EXP_DATA.stimTiming.validatedTTL_NLX/(1000)',YLIM(2)*0.9,'w.','markersize',10)
+    end
     
     axes('position',[0.1,0.2,0.8,0.03])
     set(gca,'fontsize',28)
+    if isfield(EXP_DATA,'stimTiming')
     plot(EXP_DATA.stimTiming.validatedTTL_NLX/(1000)',1,'r.','markersize',24)
+    end
+    
     set(gca,'xlim',XLIM)
     set(gca,'xtick',xticks(2:2:end),'xticklabels',{'11:00pm','03:00am','05:00am','07:00am'})
     set(gca,'ytick','')
