@@ -23,10 +23,6 @@ end
 
 %% Basic statistics of sleep oscillations
 % Whole sleep spectrogram - to see SWS\Spindles periods
-pts = [484];
-hypnogram_ch_macro = [{[99,101,102]}]}];
-
-idx_pt = find(pt ==  pts);
 
 % Generating spectrograms for *all* channels
 channels = getFullChannelListMacros_EEG_iEEG(MacroMontage);

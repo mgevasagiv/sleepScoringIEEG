@@ -21,7 +21,8 @@ load(fullfile(headerFileFolder, sprintf('p%03d_EXP%d_dataset.mat',pt,exp)))
 % Choose best MACRO channel to score  (pre-defined)
 dropboxLink
 pt_score_table = importXLSClosedLoopPatientList(fullfile(dropbox_link,'ptStats.xlsx')...
-                    ,'sleepScoring',35); % this table contains the pre-selected iEEG channel for scoring per pt
+                    ,'sleepScoring',35); % this table contains the pre-selected iEEG channel for scoring per pt 
+                                         % based on visual evaluation of plots generated in step 1
                
 ptInd = [];
 for ii = 1:length(pt_score_table)
@@ -50,7 +51,7 @@ if ~manualValidation
             sleepScore_obj.useClustering_for_scoring = 1;
         end
         
-        [sleep_score_vec] = evluateDelta(sleepScore_obj,data, LocalHeader, header);
+        [sleep_score_vec] = evaluateDelta(sleepScore_obj,data, LocalHeader, header);
     end
 else
     for ii = 1:length(ElectrodeForSleepScoring)

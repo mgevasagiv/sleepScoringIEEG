@@ -25,42 +25,41 @@ classdef sleepScoring_iEEG < handle
         NREM_CODE = 1;
         REM_CODE = -1;
         
-        EXTREME_NOISE = 0; % support in cases of extreme background noise
-
+        EXTREME_NOISE = 0; % support in cases of extreme background noise (This was added to make scoring possible for p544)
+        
     end
     
     methods
         
-        function [sleep_score_vec] = evluateDelta(obj,data, LocalHeader, header)
+        function [sleep_score_vec] = evaluateDelta(obj,data, LocalHeader, header)
             data(isnan(data)) = 0;
-
+            
             %% remove extremely noisy data segments (like around stimulation
             % that shift the power to higher frequencies)
-            % This was added to make scoring possible for p544
             if obj.EXTREME_NOISE
-            timeWin = 10*obj.samplingRate;
-            dataL = size(data,2);
-            nTimeWins = floor(size(data,2)/timeWin);
-            dataLmin = dataL/obj.samplingRate/60;
-            
-            for iTimeWin=1:nTimeWins
-                normsTimeWin(1,iTimeWin) = sqrt(nansum(data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin).^2));
-            end
-            
-            stdsNorms = std(normsTimeWin(:));
-            skewNorms = skewness(normsTimeWin(:));
-            kurtNorms = kurtosis(normsTimeWin(:));
-            
-            medStd = nanmedian(stdsNorms);
-            medSkew = nanmedian(skewNorms);
-            medKurt = nanmedian(kurtNorms);
-            
-            for iTimeWin=1:nTimeWins
-                normsTimeWin(1,iTimeWin) = sqrt(nansum(data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin).^2));
-                if normsTimeWin(1,iTimeWin)  > medStd
-                    data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin) = 0;
+                timeWin = 10*obj.samplingRate;
+                dataL = size(data,2);
+                nTimeWins = floor(size(data,2)/timeWin);
+                dataLmin = dataL/obj.samplingRate/60;
+                
+                for iTimeWin=1:nTimeWins
+                    normsTimeWin(1,iTimeWin) = sqrt(nansum(data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin).^2));
                 end
-            end
+                
+                stdsNorms = std(normsTimeWin(:));
+                skewNorms = skewness(normsTimeWin(:));
+                kurtNorms = kurtosis(normsTimeWin(:));
+                
+                medStd = nanmedian(stdsNorms);
+                medSkew = nanmedian(skewNorms);
+                medKurt = nanmedian(kurtNorms);
+                
+                for iTimeWin=1:nTimeWins
+                    normsTimeWin(1,iTimeWin) = sqrt(nansum(data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin).^2));
+                    if normsTimeWin(1,iTimeWin)  > medStd
+                        data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin) = 0;
+                    end
+                end
             end
             %%
             
@@ -74,7 +73,7 @@ classdef sleepScoring_iEEG < handle
             thSleepInclusion = prctile(P_delta,obj.NREMprctile);
             thREMInclusion = prctile(P_delta,obj.REMprctile);
             
-            %find points which pass the peak threshold 
+            %find points which pass the peak threshold
             
             meanSleep = mean(P_delta);
             stdSleep = std(P_delta);
@@ -118,11 +117,11 @@ classdef sleepScoring_iEEG < handle
             text(XLIM(2)+diff(XLIM)/35,thREMInclusion*fitToWin1,'REM TH')
             
             %% Compare threshold-based sleep-scoring to a data-driven cluster approach
-            D1 = [P_delta(:), P_sp(:)];            
+            D1 = [P_delta(:), P_sp(:)];
             gm = fitgmdist(D1,2);
             P = posterior(gm,D1);
             C1 = find(P(:,1)>P(:,2));
-            C2 = find(P(:,2)>P(:,1));            
+            C2 = find(P(:,2)>P(:,1));
             Svec = zeros(1,length(D1));
             if gm.mu(1) > gm.mu(2)
                 Svec(C1) = 1;
@@ -137,7 +136,7 @@ classdef sleepScoring_iEEG < handle
             title(sprintf('white - sleep scoring based on delta TH, red - based on clustering delta+spindle, diff = %2.2f%%',...
                 100*sum(pointsPassedSleepThresh - Svec)/length(Svec)))
             
-                
+            
             for ii_a = 1:2
                 if ii_a == 1
                     if ~obj.useClustering_for_scoring
@@ -152,7 +151,7 @@ classdef sleepScoring_iEEG < handle
                     else
                         data_merge = ~Svec;
                     end
-
+                    
                 end
                 diffStartEnd = diff(data_merge);
                 %events are defined by sequences which have a peak above
@@ -194,7 +193,7 @@ classdef sleepScoring_iEEG < handle
                 if ~sum(data_merge(EventsMinLimit(end):end) == 0)
                     EventsMaxLimit = [EventsMaxLimit; length(data_merge)];
                 end
-
+                
                 % if there's <minute between REM/NREM points - merge them (this is
                 % inline with AASM guidlines)
                 %merge events which are too close apart, and set the event
@@ -252,7 +251,7 @@ classdef sleepScoring_iEEG < handle
                 
             end
             
-  
+            
             sleep_score_vec = zeros(1,length(data));
             
             sleep_score_vec(1:T(1)*obj.samplingRate) = pointsPassedSleepThresh(1);
@@ -325,21 +324,12 @@ classdef sleepScoring_iEEG < handle
                 set(gca,'ytick',[0.5,10,20])
                 datetick('x','HH:MM PM','keeplimits')
                 
-                %                 xlimits = [0 T2(end)];
-                %                 xticks = 1:(60*60):T2(end);
-                %                 for ii = 1:length(xticks)
-                %                     xlabel_str{ii} = num2str(floor((xticks(ii)/(60*60))));
-                %                 end
-                %                 axis([xlimits obj.flimits'])
-                %                 set(gca,'xtick',xticks,'XTickLabel',xlabel_str)
-                %
                 yticks = obj.flimits(1):5:obj.flimits(2);
                 colorbar
                 title_str = sprintf('%s, E%d, sleep scoring - NREM (red), Wake/REM (black)',header.id,header.experimentNum);
                 axis([get(gca,'xlim'),[0.5,30]])
                 set(gca,'ytick',[0.5,10,20,30])
                 YLIM = get(gca,'ylim');
-                
                 
                 hold on
                 xData2 = linspace(start_time,end_time,length(T));
@@ -395,7 +385,6 @@ classdef sleepScoring_iEEG < handle
                 legend('NREM','REM*','Wake*')
                 title('power spectrum (iEEG)')
                 
-                
                 axes('position',[0.4,0.2,0.3,0.3])
                 IDX.sleep_length_min = 1;
                 IDX.NREM_length_min = 2;
@@ -404,7 +393,7 @@ classdef sleepScoring_iEEG < handle
                 SLEEP_properties_stats.STATS(IDX.sleep_length_min) = (endInd-startInd)/(60*obj.samplingRate *60);
                 SLEEP_properties_stats.STATS(IDX.NREM_length_min) = 100*sum(sleep_score_vec == obj.NREM_CODE)/(endInd-startInd);
                 SLEEP_properties_stats.STATS(IDX.REM_length_min) = 100*sum(sleep_score_vec == obj.REM_CODE)/(endInd-startInd);
-              
+                
                 text(0,0.6,sprintf('sleep length = %2.2fh',SLEEP_properties_stats.STATS(IDX.sleep_length_min)))
                 text(0,0.5,sprintf('NREM = %2.2f%%',SLEEP_properties_stats.STATS(IDX.NREM_length_min)))
                 text(0,0.4,sprintf('REM = ~%2.2f%%',SLEEP_properties_stats.STATS(IDX.REM_length_min)))
@@ -413,7 +402,6 @@ classdef sleepScoring_iEEG < handle
                 filename = sprintf('sleepScore_%s_E%d_%s_ch%d_stats',header.id,header.experimentNum,LocalHeader.origName,LocalHeader.channel_id);
                 save(fullfile(figure_folder,filename),'SLEEP_properties_IDX','SLEEP_properties');
                 PrintActiveFigs(figure_folder)
-                
             end
             
         end
